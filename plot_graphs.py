@@ -15,7 +15,7 @@ def set_colors(fig):
 
 def plot_graph(data=None, outfile=None):
 
-    fig = plt.figure(1, figsize=(2.12, 1.04), dpi=100)
+    fig = plt.figure(1, figsize=(1.08, 1.04), dpi=100)
 
     sp1 = plt.subplot(311)
     plt.plot(data[0], color="#ff0000", linewidth=1.3)
@@ -37,4 +37,4 @@ def plot_graph(data=None, outfile=None):
 
     plt.subplots_adjust(hspace=0.25, wspace=0.35)
 
-    plt.savefig(outfile, dpi=100)
+    plt.savefig(outfile, dpi=100, bbox_inches="tight")

@@ -3,6 +3,7 @@ import bme680
 import time
 from pilconvert import palette_convert
 from plot_graphs import plot_graph
+from PIL import Image
 import inkyphat
 
 
@@ -48,7 +49,7 @@ def sensing(outfile):
 if __name__ == "__main__":
     sensing("test.png")
     palette_convert("test.png")
-    inkyphat.set_image("test.png")
+    inkyphat.paste(Image.open("test.png"))
     inkyphat.show()
 
 
