@@ -1,25 +1,12 @@
 #!/usr/bin/env python
 import bme680
 import time
-import matplotlib.pyplot as plt
 from pilconvert import palette_convert
+from plot_graphs import plot_graph
 import inkyphat
 
 
-def set_colors(fig):
-    fig.gca().axes.xaxis.set_ticks([])
-    fig.gca().axes.yaxis.set_ticks([])
-    fig.gca().spines["bottom"].set_color("#000000")
-    fig.gca().spines["left"].set_color("#000000")
-    fig.gca().spines["top"].set_color("#ffffff")
-    fig.gca().spines["right"].set_color("#ffffff")
-    fig.gca().spines["bottom"].set_linewidth(1.3)
-    fig.gca().spines["left"].set_linewidth(1.3)
-    fig.gca().spines["top"].set_linewidth(1.3)
-    fig.gca().spines["right"].set_linewidth(1.3)
-
-
-def sensing(outputfile):
+def sensing(outfile):
     sensor = bme680.BME680()
 
     # These oversampling settings can be tweaked to
@@ -52,32 +39,10 @@ def sensing(outputfile):
                 print(output)
                 time.sleep(1)
 
-        fig = plt.figure(1, figsize=(2.12, 1.04), dpi=100)
-
-        sp1 = plt.subplot(311)
-        plt.plot(temps, color="#ff0000", linewidth=1.3)
-
-        set_colors(fig)
-        sp1.set_ylabel("T", rotation="horizontal")
-
-        sp2 = plt.subplot(312)
-        plt.plot(pressures, color="#ff0000", linewidth=1.3)
-
-        set_colors(fig)
-        sp2.set_ylabel("P", rotation="horizontal")
-
-        sp3 = plt.subplot(313)
-        plt.plot(humidities, color="#ff0000", linewidth=1.3)
-
-        set_colors(fig)
-        sp3.set_ylabel("H", rotation="horizontal")
-
-        plt.subplots_adjust(hspace=0.25, wspace=0.35)
-
-        plt.savefig(outputfile, dpi=100)
-
     except KeyboardInterrupt:
         pass
+
+    plot_graph(data=[temps, pressures, humidities], outfile=outfile)
 
 
 if __name__ == "__main__":
