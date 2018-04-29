@@ -32,8 +32,3 @@ def palette_convert(filename):
     newimage = quantizetopalette(oldimage, palimage, dither=False)
 
     newimage.save(filename)
-
-
-if __name__ == "__main__":
-    palette_convert("test.png")
-

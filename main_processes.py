@@ -33,6 +33,12 @@ class Weather:
             date_delta = datetime.now() - time_mark
             if date_delta.total_seconds() >= self.polling_time:
                 time_mark = datetime.now()
+                print(time_mark)
+
+                cur_info = "Latest: {0:.2f} F,{1:.2f} hPa,{2:.3f} %RH".format(self.temperature_data[-1],
+                                                                              self.pressure_data[-1],
+                                                                              self.humidity_data[-1])
+                print(cur_info)
 
                 plot_graph(self.temperature_data, self.pressure_data, self.humidity_data, self.image_file)
                 palette_convert(self.image_file)
