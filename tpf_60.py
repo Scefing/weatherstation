@@ -3,7 +3,7 @@ import bme680
 import time
 
 
-def sensing(temp_data=None, hum_data=None, press_data=None, timeout=None):
+def sensing(temp_data=None, press_data=None, hum_data=None, timeout=None):
     sensor = bme680.BME680()
 
     # These oversampling settings can be tweaked to

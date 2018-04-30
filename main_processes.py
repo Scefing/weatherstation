@@ -1,12 +1,21 @@
+#!/usr/bin/env python
 from multiprocessing import Process, Manager
 from datetime import datetime
 import time
+from pydub import AudioSegment
 import progressbar
+from gtts import gTTS
+import subprocess
 from pilconvert import palette_convert
 from tpf_60 import sensing
 from plot_graphs import plot_graph
 from inky_write import show_image
 import touchphat
+
+@touchphat.on_touch("A")
+def handle_a():
+    global speaking
+    speaking = True
 
 class Weather:
 
@@ -25,7 +34,17 @@ class Weather:
             UserWarning("Sleeping longer than 60s will mean that the screen updates less than once per minute.")
         self.sleep_time = sleep_time
 
+    def speak_info(self):
+        cur_info = "Latest: {0:.2f} Fahrenheit, pressure: {1:.2f} hPa,{2:.3f} % relative humidity".format(self.temperature_data[-1],
+                                                                                                          self.pressure_data[-1],
+                                                                                                          self.humidity_data[-1])
+        info_tts = gTTS(text=cur_info, lang="en", slow=False)
+        info_tts.save("cur_info.mp3")
+
+        subprocess.run(["play", "-q", "cur_info.mp3"])
+
     def run(self):
+        global speaking
         sensor_process = Process(target=sensing,args=(self.temperature_data, self.pressure_data, self.humidity_data))
         sensor_process.daemon = True
         sensor_process.start()
@@ -33,9 +52,16 @@ class Weather:
         time_mark = datetime.now()
         bar = progressbar.ProgressBar(widgets=["Polling: ",progressbar.AnimatedMarker()], max_value=progressbar.UnknownLength)
         while True:
+            if speaking:
+                speaking = False
+
+                speaker = Process(target=self.speak_info)
+                speaker.daemon = True
+                speaker.start()
+
             date_delta = datetime.now() - time_mark
             if date_delta.total_seconds() >= self.polling_time:
-                bar.update(0)
+                bar.finish()
                 time_mark = datetime.now()
                 print(time_mark)
 
@@ -47,14 +73,21 @@ class Weather:
                 plot_graph(self.temperature_data, self.pressure_data, self.humidity_data, self.image_file)
                 palette_convert(self.image_file)
 
-                inky_process = Process(target=show_image, args=(self.image_file,))
+                inky_process = Process(target=show_image, args=(self.image_file, self.temperature_data[-1],
+                                                                                 self.pressure_data[-1],
+                                                                                 self.humidity_data[-1]))
                 inky_process.daemon = True
                 inky_process.start()
+
+                bar.start()
             else:
                 bar.update(date_delta.total_seconds())
             time.sleep(self.sleep_time)
 
-
 if __name__=="__main__":
+    speaking = False
+
     w = Weather("test.png")
     w.run()
+
+
