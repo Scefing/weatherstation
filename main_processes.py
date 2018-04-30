@@ -1,14 +1,16 @@
 from multiprocessing import Process, Manager
 from datetime import datetime
 import time
+import progressbar
 from pilconvert import palette_convert
 from tpf_60 import sensing
 from plot_graphs import plot_graph
 from inky_write import show_image
+import touchphat
 
 class Weather:
 
-    def __init__(self, image_file, polling_time=60,sleep_time=15):
+    def __init__(self, image_file, polling_time=60,sleep_time=1):
         manager = Manager()
         self.temperature_data = manager.list()
         self.pressure_data = manager.list()
@@ -29,9 +31,11 @@ class Weather:
         sensor_process.start()
 
         time_mark = datetime.now()
+        bar = progressbar.ProgressBar(widgets=["Polling: ",progressbar.AnimatedMarker()], max_value=progressbar.UnknownLength)
         while True:
             date_delta = datetime.now() - time_mark
             if date_delta.total_seconds() >= self.polling_time:
+                bar.update(0)
                 time_mark = datetime.now()
                 print(time_mark)
 
@@ -46,7 +50,8 @@ class Weather:
                 inky_process = Process(target=show_image, args=(self.image_file,))
                 inky_process.daemon = True
                 inky_process.start()
-
+            else:
+                bar.update(date_delta.total_seconds())
             time.sleep(self.sleep_time)
 
 
