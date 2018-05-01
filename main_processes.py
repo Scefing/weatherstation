@@ -2,7 +2,6 @@
 from multiprocessing import Process, Manager
 from datetime import datetime
 import time
-from pydub import AudioSegment
 import progressbar
 from gtts import gTTS
 import subprocess
@@ -35,7 +34,7 @@ class Weather:
         self.sleep_time = sleep_time
 
     def speak_info(self):
-        cur_info = "Latest: {0:.2f} Fahrenheit, pressure: {1:.2f} hPa,{2:.3f} % relative humidity".format(self.temperature_data[-1],
+        cur_info = "Latest: {0:.0f} Fahrenheit, pressure: {1:.0f} hPa,{2:.0f} % relative humidity".format(self.temperature_data[-1],
                                                                                                           self.pressure_data[-1],
                                                                                                           self.humidity_data[-1])
         info_tts = gTTS(text=cur_info, lang="en", slow=False)
@@ -73,9 +72,9 @@ class Weather:
                 plot_graph(self.temperature_data, self.pressure_data, self.humidity_data, self.image_file)
                 palette_convert(self.image_file)
 
-                inky_process = Process(target=show_image, args=(self.image_file, self.temperature_data[-1],
-                                                                                 self.pressure_data[-1],
-                                                                                 self.humidity_data[-1]))
+                inky_process = Process(target=show_image, args=(self.image_file, self.temperature_data,
+                                                                                 self.pressure_data,
+                                                                                 self.humidity_data))
                 inky_process.daemon = True
                 inky_process.start()
 

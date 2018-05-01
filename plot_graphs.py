@@ -33,7 +33,7 @@ def plot_graph(temp_data=None, press_data=None, hum_data=None, outfile=None):
     set_colors(fig)
     sp2.set_ylabel("P", rotation="horizontal")
 
-    sp3 = fig.add_subplot(313,label=random_label())
+    sp3 = fig.add_subplot(313, label=random_label())
     sp3.plot(hum_data, color="#ff0000", linewidth=1.3)
     set_colors(fig)
     sp3.set_ylabel("H", rotation="horizontal")
