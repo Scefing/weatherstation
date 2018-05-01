@@ -43,7 +43,7 @@ class Weather:
 
     def speak_info(self):
         if any([len(self.temperature_data), len(self.pressure_data), len(self.humidity_data)]) == 0:
-            cur_info = "No polling has taken place. Please wait at least {} seconds.".format(self.data_polling)
+            cur_info = "No polling has taken place. Please wait a few moments."
         else:
             cur_info = "Latest: {0:.0f} Fahrenheit, pressure: {1:.0f} hPa,{2:.0f} % relative humidity".format(self.temperature_data[-1],
                                                                                                           self.pressure_data[-1],
