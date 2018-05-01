@@ -18,15 +18,23 @@ def handle_a():
 
 class Weather:
 
-    def __init__(self, image_file, polling_time=60,sleep_time=1):
+    def __init__(self, image_file, polling_time=60, sleep_time=1, data_polling=1, data_timeout=None):
         manager = Manager()
         self.temperature_data = manager.list()
         self.pressure_data = manager.list()
         self.humidity_data = manager.list()
         self.image_file = image_file
+        self.data_polling = data_polling
+        self.data_timeout = data_timeout
 
         if polling_time < 20:
             raise ValueError("Polling time cannot be less 20s, the refresh rate of the screen.")
+        if data_polling > polling_time:
+            raise ValueError("Data must be polled at least once per screen refresh.")
+        if polling_time/data_polling > 60:
+            UserWarning("Data will show the last {} seconds, but only be polled every {} seconds.".format(data_polling*60, polling_time))
+        if polling_time/data_polling > 180:
+            raise ValueError("Too much data will be lost in between screen refreshes (120+ data points).")
         self.polling_time = polling_time
 
         if sleep_time > 60:
@@ -44,7 +52,7 @@ class Weather:
 
     def run(self):
         global speaking
-        sensor_process = Process(target=sensing,args=(self.temperature_data, self.pressure_data, self.humidity_data))
+        sensor_process = Process(target=sensing,args=(self.temperature_data, self.pressure_data, self.humidity_data,self.data_polling, self.data_timeout))
         sensor_process.daemon = True
         sensor_process.start()
 
@@ -83,10 +91,11 @@ class Weather:
                 bar.update(date_delta.total_seconds())
             time.sleep(self.sleep_time)
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     speaking = False
 
-    w = Weather("test.png")
+    w = Weather(image_file="test.png", data_polling=60, polling_time=360, sleep_time=1)
     w.run()
 
 
