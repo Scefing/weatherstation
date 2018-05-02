@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from multiprocessing import Process, Manager, Pool
+from multiprocessing import Process, Manager
 from datetime import datetime
 import time
 import progressbar
@@ -18,7 +18,7 @@ def handle_a():
     speak_values = True
 
 @touchphat.on_touch("B")
-def handle_a():
+def handle_b():
     global speak_all_values
     speak_all_values = True
 
@@ -47,23 +47,23 @@ class Weather:
             UserWarning("Sleeping longer than 60s will mean that the screen updates less than once per minute.")
         self.sleep_time = sleep_time
 
-    def speak(self, name):
+    def speak(self, speech, name):
 
-        info_tts = gTTS(text=name, lang="en", slow=False)
-        info_tts.save("cur_info.mp3")
+        info_tts = gTTS(text=speech, lang="en", slow=False)
+        info_tts.save(name + ".mp3")
 
         subprocess.run(["play", "-q", name + ".mp3"])
 
     def speak_full_info(self):
-        if any([len(self.temperature_data), len(self.pressure_data), len(self.humidity_data)]) == 0:
-            cur_info = "No polling has taken place. Please wait a few moments."
+        if len(self.temperature_data) == 0 or len(self.pressure_data) == 0 or len(self.humidity_data) == 0:
+            cur_full_info = "No polling has taken place. Please wait a few moments."
         else:
             temp_data = regression_info(self.temperature_data)
             press_data = regression_info(self.pressure_data)
             humidity_data = regression_info(self.humidity_data)
 
-            cur_full_info = "Latest: {0:.0f} Fahrenheit {}, with {} evidence; pressure: {1:.0f} hPa {}, with {} evidence;" \
-                       " {2:.0f} % relative humidity {}, with {} evidence.".format(self.temperature_data[-1],
+            cur_full_info = "Latest: {:.0f} Fahrenheit {}, with {} evidence; pressure: {:.0f} hPa {}, with {} evidence;" \
+                            " {:.0f} % relative humidity {}, with {} evidence.".format(self.temperature_data[-1],
                                                                                    temp_data["r-value"]["relationship"],
                                                                                    temp_data["p-value"]["evidence"],
                                                                                    self.pressure_data[-1],
@@ -72,16 +72,16 @@ class Weather:
                                                                                    self.humidity_data[-1],
                                                                                    humidity_data["r-value"]["relationship"],
                                                                                    humidity_data["p-value"]["evidence"])
-            self.speak(cur_full_info)
+        self.speak(cur_full_info, "cur_full_info")
 
     def speak_info(self):
-        if any([len(self.temperature_data), len(self.pressure_data), len(self.humidity_data)]) == 0:
+        if len(self.temperature_data) == 0 or len(self.pressure_data) == 0 or len(self.humidity_data) == 0:
             cur_info = "No polling has taken place. Please wait a few moments."
         else:
             cur_info = "Latest: {0:.0f} Fahrenheit, pressure: {1:.0f} hPa,{2:.0f} % relative humidity".format(self.temperature_data[-1],
-                                                                                                          self.pressure_data[-1],
-                                                                                                          self.humidity_data[-1])
-        self.speak(cur_info)
+                                                                                                              self.pressure_data[-1],
+                                                                                                              self.humidity_data[-1])
+        self.speak(cur_info, "cur_info")
 
     def run(self):
         global speak_values
@@ -103,7 +103,7 @@ class Weather:
             elif speak_all_values:
                 speak_all_values = False
 
-                speaker = Process(target=self.speak_info)
+                speaker = Process(target=self.speak_full_info)
                 speaker.daemon = True
                 speaker.start()
 
@@ -138,6 +138,23 @@ if __name__ == "__main__":
     speak_values = False
     speak_all_values = False
 
-    w = Weather(image_file="test.png", data_polling=1, polling_time=20, sleep_time=1)
+    while True:
+        try:
+            long_short = input("Short (1) or long(2) [1]?")
+
+            if long_short == "1" or long_short == "":
+                data_polling = 60
+                polling_time = 1
+                break
+            elif long_short == "2":
+                data_polling = 60
+                polling_time = 60
+                break
+            else:
+                "Select 1 or 2."
+        except KeyboardInterrupt:
+            pass
+
+    w = Weather(image_file="test.png", data_polling=data_polling, polling_time=polling_time, sleep_time=1)
     w.run()
 

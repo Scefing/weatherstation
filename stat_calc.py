@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-import scipy
+import scipy.stats
 
 def compute_least_squares(data):
-    slope, intercept, r_value, p_value, std_err = scipy.stats.linregress(data, range(1,61))
+    slope, intercept, r_value, p_value, std_err = scipy.stats.linregress(data, range(0, len(data)))
 
     return r_value, p_value
 
@@ -23,7 +23,7 @@ def regression_info(data):
         p_data["evidence_symbol"] = "∼"
     elif p_value >= 0.055:
         p_data["evidence"] = "weak"
-        p_data["evidence_symbol"] = "🗙"
+        p_data["evidence_symbol"] = "✖"
     else:
         p_data["evidence"] = "unknown"
         p_data["evidence_symbol"] = "?"
@@ -44,7 +44,7 @@ def regression_info(data):
     elif 0.3 < r_value < 0.5:
         r_data["relationship"] = "rising weakly"
         r_data["relationship_symbol"] = "↑"
-    elif -0.3 <= r_value < 0.-0.3 and r_value != 0:
+    elif -0.3 <= r_value <= 0.3 and r_value != 0:
         r_data["relationship"] = "wavering"
         r_data["relationship_symbol"] = "⇝"
     elif r_value == 0:
@@ -63,7 +63,7 @@ def regression_info(data):
         r_data["relationship"] = "falling straight down"
         r_data["relationship_symbol"] = "⤓"
     else:
-        r_data["relationship"] = "unknown"
+        r_data["relationship"] = "unknown direction"
         r_data["relationship_symbol"] = "⟳"
 
     regression_info["r-value"] = r_data
