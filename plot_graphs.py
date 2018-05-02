@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import matplotlib.pyplot as plt
 from random import random
+import gc
 
 def set_colors(fig):
     fig.gca().axes.xaxis.set_ticks([])
@@ -41,3 +42,6 @@ def plot_graph(temp_data=None, press_data=None, hum_data=None, outfile=None):
     fig.subplots_adjust(hspace=0.25, wspace=0.35)
 
     plt.savefig(outfile, dpi=100, bbox_inches="tight")
+    plt.clf()
+    plt.close()
+    gc.collect()
