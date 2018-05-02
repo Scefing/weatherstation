@@ -1,5 +1,42 @@
 #!/usr/bin/env python
 import scipy.stats
+import math
+
+
+def magnitude(x):
+    return int(math.floor(math.log10(x)))
+
+
+def calc_delta_exp(data, as_string=False):
+    delta = max(data) - min(data)
+    if delta > 0:
+        mag_delta = magnitude(delta)
+        delta_base = round(delta / (10**mag_delta))
+        if as_string:
+            return str(delta_base), str(mag_delta)
+        else:
+            return delta_base, mag_delta
+    else:
+        if as_string:
+            return "0", "0"
+        else:
+            return 0, 0
+
+def round_first_nonzero(number, exponent):
+
+    if number >= 1:
+        return round(number)
+    else:
+        return round(number, exponent)
+
+
+def approx_delta(data):
+    base, exponent = calc_delta_exp(data, as_string=False)
+
+    rounded_delta = round_first_nonzero(base ** exponent, exponent)
+
+    return rounded_delta
+
 
 def compute_least_squares(data):
     slope, intercept, r_value, p_value, std_err = scipy.stats.linregress(data, range(0, len(data)))
@@ -34,7 +71,7 @@ def regression_info(data):
     r_data["value"] = r_value
     if r_value == 1:
         r_data["relationship"] = "rising straight up"
-        r_data["relationship_symbol"] = "⤒"
+        r_data["relationship_symbol"] = "⇑"
     elif 0.7 <= r_value < 1:
         r_data["relationship"] = "rising strongly"
         r_data["relationship_symbol"] = "↑↑↑"
@@ -61,7 +98,7 @@ def regression_info(data):
         r_data["relationship_symbol"] = "↓↓↓"
     elif r_value == -1:
         r_data["relationship"] = "falling straight down"
-        r_data["relationship_symbol"] = "⤓"
+        r_data["relationship_symbol"] = "⇓"
     else:
         r_data["relationship"] = "unknown direction"
         r_data["relationship_symbol"] = "⟳"

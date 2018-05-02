@@ -9,7 +9,7 @@ from pilconvert import palette_convert
 from tpf_60 import sensing
 from plot_graphs import plot_graph
 from inky_write import show_image
-from stat_calc import regression_info
+from stat_calc import regression_info, approx_delta
 import touchphat
 
 @touchphat.on_touch("A")
@@ -60,20 +60,24 @@ class Weather:
         elif len(self.temperature_data) == 1 or len(self.pressure_data) == 1 or len(self.humidity_data) == 1:
             cur_full_info = "Only one poll has taken place. Please wait at least {} seconds for the next poll.".format(self.data_polling)
         else:
-            temp_data = regression_info(self.temperature_data)
-            press_data = regression_info(self.pressure_data)
-            humidity_data = regression_info(self.humidity_data)
+            temp_informatics = regression_info(self.temperature_data)
+            press_informatics = regression_info(self.pressure_data)
+            humidity_informatics = regression_info(self.humidity_data)
 
-            cur_full_info = "Latest: {:.0f} Fahrenheit {}, with {} evidence; pressure: {:.0f} hPa {}, with {} evidence;" \
-                            " {:.0f} % relative humidity {}, with {} evidence.".format(self.temperature_data[-1],
-                                                                                   temp_data["r-value"]["relationship"],
-                                                                                   temp_data["p-value"]["evidence"],
-                                                                                   self.pressure_data[-1],
-                                                                                   press_data["r-value"]["relationship"],
-                                                                                   press_data["p-value"]["evidence"],
-                                                                                   self.humidity_data[-1],
-                                                                                   humidity_data["r-value"]["relationship"],
-                                                                                   humidity_data["p-value"]["evidence"])
+            cur_full_info = "Latest: {:.0f} Fahrenheit {}, with {} evidence, over about {} degrees; " \
+                            "pressure: {:.0f} hPa {}, with {} evidence, over about {} hPa;" \
+                            " {:.0f} % relative humidity {}, with {} evidence,  over about {} %.".format(self.temperature_data[-1],
+                                                                                                       temp_informatics["r-value"]["relationship"],
+                                                                                                       temp_informatics["p-value"]["evidence"],
+                                                                                                       approx_delta(self.temperature_data),
+                                                                                                       self.pressure_data[-1],
+                                                                                                       press_informatics["r-value"]["relationship"],
+                                                                                                       press_informatics["p-value"]["evidence"],
+                                                                                                       approx_delta(self.pressure_data),
+                                                                                                       self.humidity_data[-1],
+                                                                                                       humidity_informatics["r-value"]["relationship"],
+                                                                                                       humidity_informatics["p-value"]["evidence"],
+                                                                                                       approx_delta(self.humidity_data))
         self.speak(cur_full_info, "cur_full_info")
 
     def speak_info(self):
