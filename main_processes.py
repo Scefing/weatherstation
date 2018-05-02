@@ -65,7 +65,7 @@ class Weather:
             humidity_informatics = regression_info(self.humidity_data)
 
             cur_full_info = "Latest: {:.0f} Fahrenheit {}, with {} evidence, over about {} degrees; " \
-                            "pressure: {:.0f} hPa {}, with {} evidence, over about {} hPa;" \
+                            "pressure: {:.0f} hPa {}, with {} evidence, over about {} hectopascals;" \
                             " {:.0f} % relative humidity {}, with {} evidence,  over about {} %.".format(self.temperature_data[-1],
                                                                                                        temp_informatics["r-value"]["relationship"],
                                                                                                        temp_informatics["p-value"]["evidence"],
@@ -149,8 +149,8 @@ if __name__ == "__main__":
             long_short = input("Short (1) or long(2) [1]?")
 
             if long_short == "1" or long_short == "":
-                data_polling = 60
-                polling_time = 1
+                data_polling = 1
+                polling_time = 60
                 break
             elif long_short == "2":
                 data_polling = 60

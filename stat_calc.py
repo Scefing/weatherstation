@@ -27,13 +27,14 @@ def round_first_nonzero(number, exponent):
     if number >= 1:
         return round(number)
     else:
-        return round(number, exponent)
+        return round(number, abs(exponent))
 
 
 def approx_delta(data):
     base, exponent = calc_delta_exp(data, as_string=False)
 
     rounded_delta = round_first_nonzero(base ** exponent, exponent)
+    print(rounded_delta)
 
     return rounded_delta
 
