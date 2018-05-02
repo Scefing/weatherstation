@@ -36,7 +36,10 @@ def approx_delta(data, as_tts_string=False):
     rounded_delta = round_first_nonzero(base ** exponent, exponent)
 
     if as_tts_string:
-        return str(rounded_delta).replace(".", " point ")
+        if "." in str(rounded_delta):
+            return str(rounded_delta).replace(".", " point ")
+        else:
+            return str(rounded_delta)
     else:
         return rounded_delta
 
