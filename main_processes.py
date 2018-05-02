@@ -57,6 +57,8 @@ class Weather:
     def speak_full_info(self):
         if len(self.temperature_data) == 0 or len(self.pressure_data) == 0 or len(self.humidity_data) == 0:
             cur_full_info = "No polling has taken place. Please wait a few moments."
+        elif len(self.temperature_data) == 1 or len(self.pressure_data) == 1 or len(self.humidity_data) == 1:
+            cur_full_info = "Only one poll has taken place. Please wait at least {} seconds for the next poll.".format(self.data_polling)
         else:
             temp_data = regression_info(self.temperature_data)
             press_data = regression_info(self.pressure_data)
