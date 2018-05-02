@@ -30,13 +30,15 @@ def round_first_nonzero(number, exponent):
         return round(number, abs(exponent))
 
 
-def approx_delta(data):
+def approx_delta(data, as_tts_string=False):
     base, exponent = calc_delta_exp(data, as_string=False)
 
     rounded_delta = round_first_nonzero(base ** exponent, exponent)
-    print(rounded_delta)
 
-    return rounded_delta
+    if as_tts_string:
+        return str(rounded_delta).replace(".", " point ")
+    else:
+        return rounded_delta
 
 
 def compute_least_squares(data):

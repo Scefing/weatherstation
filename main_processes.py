@@ -69,15 +69,15 @@ class Weather:
                             " {:.0f} % relative humidity {}, with {} evidence,  over about {} %.".format(self.temperature_data[-1],
                                                                                                        temp_informatics["r-value"]["relationship"],
                                                                                                        temp_informatics["p-value"]["evidence"],
-                                                                                                       approx_delta(self.temperature_data),
+                                                                                                       approx_delta(self.temperature_data, as_tts_string=True),
                                                                                                        self.pressure_data[-1],
                                                                                                        press_informatics["r-value"]["relationship"],
                                                                                                        press_informatics["p-value"]["evidence"],
-                                                                                                       approx_delta(self.pressure_data),
+                                                                                                       approx_delta(self.pressure_data, as_tts_string=True),
                                                                                                        self.humidity_data[-1],
                                                                                                        humidity_informatics["r-value"]["relationship"],
                                                                                                        humidity_informatics["p-value"]["evidence"],
-                                                                                                       approx_delta(self.humidity_data))
+                                                                                                       approx_delta(self.humidity_data, as_tts_string=True))
         self.speak(cur_full_info, "cur_full_info")
 
     def speak_info(self):
