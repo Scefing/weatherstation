@@ -50,6 +50,6 @@ def show_image(infile, temp_data=None, pressure_data=None, humidity_data=None):
     inkyphat.set_image(Image.open(infile))
     inkyphat.text((110,10), "{0:.1f}°F \n {1}".format(temp_data[-1], temp_info), inkyphat.BLACK, font)
     inkyphat.text((110,40), "{0:.0f} hPa \n {1}".format(pressure_data[-1],press_info), inkyphat.BLACK, font)
-    inkyphat.text((110,70), "{0:.0f} %RH \n {1}".format(humidity_data[1], humidity_info), inkyphat.BLACK, font)
+    inkyphat.text((110,70), "{0:.0f} %RH \n {1}".format(humidity_data[-1], humidity_info), inkyphat.BLACK, font)
 
     inkyphat.show()
