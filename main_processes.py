@@ -24,24 +24,25 @@ def handle_b():
 
 class Weather:
 
-    def __init__(self, image_file, polling_time=60, sleep_time=1, data_polling=1, data_timeout=None):
+    def __init__(self, image_file, screen_polling_time=60, sleep_time=1, data_polling_time=1, data_limit=60, data_timeout=None):
         manager = Manager()
         self.temperature_data = manager.list()
         self.pressure_data = manager.list()
         self.humidity_data = manager.list()
         self.image_file = image_file
-        self.data_polling = data_polling
+        self.data_polling = data_polling_time
         self.data_timeout = data_timeout
+        self.data_limit = data_limit
 
-        if polling_time < 20:
+        if screen_polling_time < 20:
             raise ValueError("Polling time cannot be less 20s, the refresh rate of the screen.")
-        if data_polling > polling_time:
+        if data_polling_time > screen_polling_time:
             raise ValueError("Data must be polled at least once per screen refresh.")
-        if polling_time/data_polling > 60:
-            UserWarning("Data will show the last {} seconds, but only be polled every {} seconds.".format(data_polling*60, polling_time))
-        if polling_time/data_polling > 180:
+        if screen_polling_time/data_polling_time > 60:
+            UserWarning("Data will show the last {} seconds, but only be polled every {} seconds.".format(data_polling_time * 60, screen_polling_time))
+        if screen_polling_time/data_polling_time > 180:
             raise ValueError("Too much data will be lost in between screen refreshes (120+ data points).")
-        self.polling_time = polling_time
+        self.polling_time = screen_polling_time
 
         if sleep_time > 60:
             UserWarning("Sleeping longer than 60s will mean that the screen updates less than once per minute.")
@@ -92,7 +93,7 @@ class Weather:
     def run(self):
         global speak_values
         global speak_all_values
-        sensor_process = Process(target=sensing,args=(self.temperature_data, self.pressure_data, self.humidity_data,self.data_polling, self.data_timeout))
+        sensor_process = Process(target=sensing,args=(self.temperature_data, self.pressure_data, self.humidity_data, self.data_polling, self.data_limit, self.data_timeout))
         sensor_process.daemon = True
         sensor_process.start()
 
@@ -146,21 +147,27 @@ if __name__ == "__main__":
 
     while True:
         try:
-            long_short = input("Short (1) or long(2) [1]?")
+            long_short = input("Short (1), long (2), or day-long (3) [default: 1]?")
 
             if long_short == "1" or long_short == "":
-                data_polling = 1
-                polling_time = 60
+                dt_polling_time = 1
+                scr_polling_time = 60
+                dt_limit = 60
                 break
             elif long_short == "2":
-                data_polling = 60
-                polling_time = 60
+                dt_polling_time = 60
+                scr_polling_time = 60
+                dt_limit = 60
+            elif long_short == "3":
+                dt_polling_time = 60
+                scr_polling_time = 60
+                dt_limit = 1440
                 break
             else:
-                "Select 1 or 2."
+                "Select 1, 2, or 3."
         except KeyboardInterrupt:
             pass
 
-    w = Weather(image_file="test.png", data_polling=data_polling, polling_time=polling_time, sleep_time=1)
+    w = Weather(image_file="test.png", data_polling_time=dt_polling_time, screen_polling_time=scr_polling_time, sleep_time=1, data_limit=dt_limit)
     w.run()
 
