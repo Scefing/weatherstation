@@ -128,3 +128,17 @@ def regression_info(data):
     regression_info["r-value"] = r_data
 
     return regression_info
+
+
+def full_statistics(data):
+
+    base_stats = regression_info(data)
+
+    base_stats["approx delta"] = {}
+
+    base_stats["approx delta"]["string"] = approx_delta(data, as_tts_string=True)
+    base_stats["approx delta"]["int"] = approx_delta(data, as_tts_string=False)
+
+    return base_stats
+
+

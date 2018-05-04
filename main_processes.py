@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from multiprocessing import Process, Manager, Pool
+from multiprocessing import Manager, Pool, Pipe
 from datetime import datetime
 import time
 import progressbar
@@ -9,7 +9,7 @@ from pilconvert import palette_convert
 from tpf_60 import sensing
 from plot_graphs import plot_graph
 from inky_write import show_image
-from stat_calc import regression_info, approx_delta
+from stat_calc import full_statistics
 import touchphat
 
 @touchphat.on_touch("A")
@@ -37,6 +37,8 @@ class Weather:
         self.pressure_statistics = manager.dict()
         self.humidity_statistics = manager.dict()
 
+        self.calculate_condition = manager.Condition()
+
         self.image_file = image_file
         self.data_polling = data_polling_time
         self.data_timeout = data_timeout
@@ -56,8 +58,6 @@ class Weather:
             UserWarning("Sleeping longer than 60s will mean that the screen updates less than once per minute.")
         self.sleep_time = sleep_time
 
-        self.data_length = 0
-
     def speak(self, speech, name):
 
         info_tts = gTTS(text=speech, lang="en", slow=False)
@@ -71,24 +71,20 @@ class Weather:
         elif len(self.temperature_data) == 1 or len(self.pressure_data) == 1 or len(self.humidity_data) == 1:
             cur_full_info = "Only one poll has taken place. Please wait at least {} seconds for the next poll.".format(self.data_polling)
         else:
-            temp_informatics = regression_info(self.temperature_data)
-            press_informatics = regression_info(self.pressure_data)
-            humidity_informatics = regression_info(self.humidity_data)
-
             cur_full_info = "Latest: {:.0f} Fahrenheit {}, with {} evidence, over about {} degrees; " \
                             "pressure: {:.0f} hPa {}, with {} evidence, over about {} hectopascals;" \
                             " {:.0f} % relative humidity {}, with {} evidence,  over about {} %.".format(self.temperature_data[-1],
-                                                                                                       temp_informatics["r-value"]["relationship"],
-                                                                                                       temp_informatics["p-value"]["evidence"],
-                                                                                                       approx_delta(self.temperature_data, as_tts_string=True),
-                                                                                                       self.pressure_data[-1],
-                                                                                                       press_informatics["r-value"]["relationship"],
-                                                                                                       press_informatics["p-value"]["evidence"],
-                                                                                                       approx_delta(self.pressure_data, as_tts_string=True),
-                                                                                                       self.humidity_data[-1],
-                                                                                                       humidity_informatics["r-value"]["relationship"],
-                                                                                                       humidity_informatics["p-value"]["evidence"],
-                                                                                                       approx_delta(self.humidity_data, as_tts_string=True))
+                                                                                                         self.temperature_statistics["r-value"]["relationship"],
+                                                                                                         self.temperature_statistics["p-value"]["evidence"],
+                                                                                                         self.temperature_statistics["approx delta"]["string"],
+                                                                                                         self.pressure_data[-1],
+                                                                                                         self.pressure_statistics["r-value"]["relationship"],
+                                                                                                         self.pressure_statistics["p-value"]["evidence"],
+                                                                                                         self.pressure_statistics["approx delta"]["string"],
+                                                                                                         self.humidity_data[-1],
+                                                                                                         self.humidity_statistics["r-value"]["relationship"],
+                                                                                                         self.humidity_statistics["p-value"]["evidence"],
+                                                                                                         self.humidity_statistics["approx delta"]["string"])
         self.speak(cur_full_info, "cur_full_info")
 
     def speak_info(self):
@@ -100,6 +96,16 @@ class Weather:
                                                                                                               self.humidity_data[-1])
         self.speak(cur_info, "cur_info")
 
+    def calc_statistics(self):
+
+        while True:
+            self.calculate_condition.acquire()
+            self.calculate_condition.wait()
+            self.calculate_condition.release()
+
+            self.temperature_statistics.update(full_statistics(self.temperature_data))
+            self.pressure_statistics.update(full_statistics(self.pressure_data))
+            self.humidity_statistics.update(full_statistics(self.humidity_data))
 
     def run(self):
         global speak_values
@@ -122,6 +128,7 @@ class Weather:
             date_delta = datetime.now() - time_mark
             if date_delta.total_seconds() >= self.polling_time:
                 bar.finish()
+
                 time_mark = datetime.now()
                 print(time_mark)
 

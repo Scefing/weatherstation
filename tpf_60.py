@@ -3,7 +3,7 @@ import bme680
 import time
 
 
-def sensing(temp_data=None, press_data=None, hum_data=None, polling=1, data_limit=60, timeout=None):
+def sensing(temp_data=None, press_data=None, hum_data=None, polling=1, data_limit=60, timeout=None, condition_flag=None):
     sensor = bme680.BME680()
 
     # These oversampling settings can be tweaked to
@@ -21,6 +21,8 @@ def sensing(temp_data=None, press_data=None, hum_data=None, polling=1, data_limi
             cel_temp = sensor.data.temperature
             fahr_temp = (cel_temp * 9 / 5) + 32
 
+            condition_flag.acquire()
+
             temp_data.append(fahr_temp)
             if len(temp_data) > data_limit:
                 temp_data.pop(0)
@@ -35,7 +37,13 @@ def sensing(temp_data=None, press_data=None, hum_data=None, polling=1, data_limi
 
             if timeout:
                 if time_total >= timeout:
+                    condition_flag.notify_all()
+                    condition_flag.release()
                     break
                 else:
                     time_total += 1
+
+            condition_flag.notify_all()
+            condition_flag.release()
+
             time.sleep(polling)
