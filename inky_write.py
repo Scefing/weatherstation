@@ -7,9 +7,11 @@ def convert_to_delta(data):
 
     base, exponent = calc_delta_exp(data, as_string=True)
 
-    if base != 10 and exponent == 1:
+    if base != "10" and exponent == "1":
         exponent = ""
     if base == "0" and exponent == "0":
+        exponent = ""
+    if base == "1" and exponent == "0":
         exponent = ""
 
     unicode_script = ""
