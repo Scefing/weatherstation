@@ -3,16 +3,31 @@ import scipy.stats
 import math
 
 
-def magnitude(x):
-    return int(math.floor(math.log10(x)))
+def logx_magnitude(number, base=10):
+    return int(math.floor(math.log(number, base)))
 
 
 def calc_delta_exp(data, as_string=False):
     delta = max(data) - min(data)
     if delta > 0:
-        mag_delta = magnitude(delta)
-        delta_base = round(delta / (10**mag_delta))
+        if delta < 1:
+            mag_delta = logx_magnitude(delta)
+            delta_base = round(delta / (10**mag_delta))
+        elif delta >= 1:
+            rounded_delta = round(delta)
+
+            if math.log(rounded_delta, 10) % 1 == 0:
+                delta_base = rounded_delta
+                mag_delta = logx_magnitude(rounded_delta, 10)
+            else:
+                delta_base = rounded_delta
+                mag_delta = 1
+        else:
+            delta_base = 0
+            mag_delta = 0
+
         if as_string:
+
             return str(delta_base), str(mag_delta)
         else:
             return delta_base, mag_delta
@@ -21,6 +36,7 @@ def calc_delta_exp(data, as_string=False):
             return "0", "0"
         else:
             return 0, 0
+
 
 def round_first_nonzero(number, exponent):
 

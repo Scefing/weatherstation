@@ -7,6 +7,9 @@ def convert_to_delta(data):
 
     base, exponent = calc_delta_exp(data, as_string=True)
 
+    if base != 10 and exponent == 1:
+        exponent = ""
+
     unicode_script = ""
     number_to_name = {"0": "\N{SUPERSCRIPT ZERO}", 
                       "1": "\N{SUPERSCRIPT ONE}", 
