@@ -110,7 +110,7 @@ class Weather:
     def run(self):
         global speak_values
         global speak_all_values
-        self.pool.apply_async(func=sensing, args=(self.temperature_data, self.pressure_data, self.humidity_data, self.data_polling, self.data_limit, self.data_timeout))
+        self.pool.apply_async(func=sensing, args=(self.temperature_data, self.pressure_data, self.humidity_data, self.data_polling, self.data_limit, self.data_timeout, self.calculate_condition))
 
         time_mark = datetime.now()
         bar = progressbar.ProgressBar(widgets=["Polling: ", progressbar.AnimatedMarker()], max_value=progressbar.UnknownLength)
