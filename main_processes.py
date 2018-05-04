@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from multiprocessing import Process, Manager
+from multiprocessing import Process, Manager, Pool
 from datetime import datetime
 import time
 import progressbar
@@ -24,11 +24,19 @@ def handle_b():
 
 class Weather:
 
-    def __init__(self, image_file, screen_polling_time=60, sleep_time=1, data_polling_time=1, data_limit=60, data_timeout=None):
+    def __init__(self, image_file=None, screen_polling_time=60, sleep_time=1, data_polling_time=1, data_limit=60, data_timeout=None):
+        self.pool = Pool(8)
+
         manager = Manager()
+
         self.temperature_data = manager.list()
         self.pressure_data = manager.list()
         self.humidity_data = manager.list()
+
+        self.temperature_statistics = manager.dict()
+        self.pressure_statistics = manager.dict()
+        self.humidity_statistics = manager.dict()
+
         self.image_file = image_file
         self.data_polling = data_polling_time
         self.data_timeout = data_timeout
@@ -47,6 +55,8 @@ class Weather:
         if sleep_time > 60:
             UserWarning("Sleeping longer than 60s will mean that the screen updates less than once per minute.")
         self.sleep_time = sleep_time
+
+        self.data_length = 0
 
     def speak(self, speech, name):
 
@@ -90,29 +100,24 @@ class Weather:
                                                                                                               self.humidity_data[-1])
         self.speak(cur_info, "cur_info")
 
+
     def run(self):
         global speak_values
         global speak_all_values
-        sensor_process = Process(target=sensing,args=(self.temperature_data, self.pressure_data, self.humidity_data, self.data_polling, self.data_limit, self.data_timeout))
-        sensor_process.daemon = True
-        sensor_process.start()
+        self.pool.apply_async(func=sensing, args=(self.temperature_data, self.pressure_data, self.humidity_data, self.data_polling, self.data_limit, self.data_timeout))
 
         time_mark = datetime.now()
-        bar = progressbar.ProgressBar(widgets=["Polling: ",progressbar.AnimatedMarker()], max_value=progressbar.UnknownLength)
+        bar = progressbar.ProgressBar(widgets=["Polling: ", progressbar.AnimatedMarker()], max_value=progressbar.UnknownLength)
         while True:
             if speak_values:
                 speak_values = False
 
-                speaker = Process(target=self.speak_info)
-                speaker.daemon = True
-                speaker.start()
+                self.pool.apply_async(func=self.speak_info)
 
             elif speak_all_values:
                 speak_all_values = False
 
-                speaker = Process(target=self.speak_full_info)
-                speaker.daemon = True
-                speaker.start()
+                self.pool.apply_async(func=self.speak_full_info)
 
             date_delta = datetime.now() - time_mark
             if date_delta.total_seconds() >= self.polling_time:
@@ -128,11 +133,8 @@ class Weather:
                 plot_graph(self.temperature_data, self.pressure_data, self.humidity_data, self.image_file)
                 palette_convert(self.image_file)
 
-                inky_process = Process(target=show_image, args=(self.image_file, self.temperature_data,
-                                                                                 self.pressure_data,
-                                                                                 self.humidity_data))
-                inky_process.daemon = True
-                inky_process.start()
+                self.pool.apply_async(func=show_image, args=(self.image_file, self.temperature_data,
+                                                             self.pressure_data, self.humidity_data))
 
                 bar.start()
 
