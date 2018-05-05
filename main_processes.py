@@ -1,16 +1,16 @@
 #!/usr/bin/env python
-from multiprocessing import Manager, Pool, Pipe
+from multiprocessing import Manager, Process
 from datetime import datetime
 import time
 import progressbar
-from gtts import gTTS
-import subprocess
+import touchphat
+
 from pilconvert import palette_convert
 from tpf_60 import sensing
 from plot_graphs import plot_graph
 from inky_write import show_image
-from stat_calc import full_statistics
-import touchphat
+from stat_calc import calc_statistics
+from speak_information import speak_info, speak_full_info
 
 @touchphat.on_touch("A")
 def handle_a():
@@ -25,7 +25,6 @@ def handle_b():
 class Weather:
 
     def __init__(self, image_file=None, screen_polling_time=60, sleep_time=1, data_polling_time=1, data_limit=60, data_timeout=None):
-        self.pool = Pool(8)
 
         manager = Manager()
 
@@ -58,59 +57,21 @@ class Weather:
             UserWarning("Sleeping longer than 60s will mean that the screen updates less than once per minute.")
         self.sleep_time = sleep_time
 
-    def speak(self, speech, name):
-
-        info_tts = gTTS(text=speech, lang="en", slow=False)
-        info_tts.save(name + ".mp3")
-
-        subprocess.run(["play", "-q", name + ".mp3"])
-
-    def speak_full_info(self):
-        if len(self.temperature_data) == 0 or len(self.pressure_data) == 0 or len(self.humidity_data) == 0:
-            cur_full_info = "No polling has taken place. Please wait a few moments."
-        elif len(self.temperature_data) == 1 or len(self.pressure_data) == 1 or len(self.humidity_data) == 1:
-            cur_full_info = "Only one poll has taken place. Please wait at least {} seconds for the next poll.".format(self.data_polling)
-        else:
-            cur_full_info = "Latest: {:.0f} Fahrenheit {}, with {} evidence, over about {} degrees; " \
-                            "pressure: {:.0f} hPa {}, with {} evidence, over about {} hectopascals;" \
-                            " {:.0f} % relative humidity {}, with {} evidence,  over about {} %.".format(self.temperature_data[-1],
-                                                                                                         self.temperature_statistics["r-value"]["relationship"],
-                                                                                                         self.temperature_statistics["p-value"]["evidence"],
-                                                                                                         self.temperature_statistics["approx delta"]["string"],
-                                                                                                         self.pressure_data[-1],
-                                                                                                         self.pressure_statistics["r-value"]["relationship"],
-                                                                                                         self.pressure_statistics["p-value"]["evidence"],
-                                                                                                         self.pressure_statistics["approx delta"]["string"],
-                                                                                                         self.humidity_data[-1],
-                                                                                                         self.humidity_statistics["r-value"]["relationship"],
-                                                                                                         self.humidity_statistics["p-value"]["evidence"],
-                                                                                                         self.humidity_statistics["approx delta"]["string"])
-        self.speak(cur_full_info, "cur_full_info")
-
-    def speak_info(self):
-        if len(self.temperature_data) == 0 or len(self.pressure_data) == 0 or len(self.humidity_data) == 0:
-            cur_info = "No polling has taken place. Please wait a few moments."
-        else:
-            cur_info = "Latest: {0:.0f} Fahrenheit, pressure: {1:.0f} hPa,{2:.0f} % relative humidity".format(self.temperature_data[-1],
-                                                                                                              self.pressure_data[-1],
-                                                                                                              self.humidity_data[-1])
-        self.speak(cur_info, "cur_info")
-
-    def calc_statistics(self):
-
-        while True:
-            self.calculate_condition.acquire()
-            self.calculate_condition.wait()
-            self.calculate_condition.release()
-
-            self.temperature_statistics.update(full_statistics(self.temperature_data))
-            self.pressure_statistics.update(full_statistics(self.pressure_data))
-            self.humidity_statistics.update(full_statistics(self.humidity_data))
 
     def run(self):
         global speak_values
         global speak_all_values
-        self.pool.apply_async(func=sensing, args=(self.temperature_data, self.pressure_data, self.humidity_data, self.data_polling, self.data_limit, self.data_timeout, self.calculate_condition))
+        sensor = Process(target=sensing, args=(self.temperature_data, self.pressure_data, self.humidity_data, self.data_polling, self.data_limit, self.data_timeout, self.calculate_condition), daemon=True)
+        sensor.start()
+
+        calc_stat = Process(target=calc_statistics, kwargs=dict(temperature_data=self.temperature_data,
+                                                                temperature_statistics=self.temperature_statistics,
+                                                                pressure_data=self.pressure_data,
+                                                                pressure_statistics=self.pressure_statistics,
+                                                                humidity_data=self.humidity_data,
+                                                                humidity_statistics=self.humidity_statistics,
+                                                                condition_flag=self.calculate_condition), daemon=True)
+        calc_stat.start()
 
         time_mark = datetime.now()
         bar = progressbar.ProgressBar(widgets=["Polling: ", progressbar.AnimatedMarker()], max_value=progressbar.UnknownLength)
@@ -118,12 +79,22 @@ class Weather:
             if speak_values:
                 speak_values = False
 
-                self.pool.apply_async(func=self.speak_info)
+                spk_info = Process(target=speak_info, kwargs=dict(temperature_data=self.temperature_data,
+                                                                  temperature_statistics=self.temperature_statistics,
+                                                                  pressure_data=self.pressure_data,
+                                                                  pressure_statistics=self.pressure_statistics,
+                                                                  humidity_data=self.humidity_data,
+                                                                  humidity_statistics=self.humidity_statistics,
+                                                                  data_polling=self.data_polling), daemon=True)
+                spk_info.start()
 
             elif speak_all_values:
                 speak_all_values = False
 
-                self.pool.apply_async(func=self.speak_full_info)
+                spk_all_info = Process(target=speak_full_info, kwargs=dict(temperature_data=self.temperature_data,
+                                                                           pressure_data=self.pressure_data,
+                                                                           humidity_data=self.humidity_data), daemon=True)
+                spk_all_info.start()
 
             date_delta = datetime.now() - time_mark
             if date_delta.total_seconds() >= self.polling_time:
@@ -140,8 +111,9 @@ class Weather:
                 plot_graph(self.temperature_data, self.pressure_data, self.humidity_data, self.image_file)
                 palette_convert(self.image_file)
 
-                self.pool.apply_async(func=show_image, args=(self.image_file, self.temperature_data,
-                                                             self.pressure_data, self.humidity_data))
+                inky_show = Process(target=show_image, args=(self.image_file, self.temperature_data,
+                                                             self.pressure_data, self.humidity_data), daemon=True)
+                inky_show.start()
 
                 bar.start()
 

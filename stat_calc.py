@@ -141,4 +141,13 @@ def full_statistics(data):
 
     return base_stats
 
+def calc_statistics(temperature_data=None, temperature_statistics=None, pressure_data=None, pressure_statistics=None, humidity_data=None, humidity_statistics=None,condition_flag=None):
 
+    while True:
+        condition_flag.acquire()
+        condition_flag.wait()
+        condition_flag.release()
+
+        temperature_statistics.update(full_statistics(temperature_data))
+        pressure_statistics.update(full_statistics(pressure_data))
+        humidity_statistics.update(full_statistics(humidity_data))
