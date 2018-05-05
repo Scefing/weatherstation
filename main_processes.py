@@ -79,21 +79,25 @@ class Weather:
             if speak_values:
                 speak_values = False
 
-                spk_info = Process(target=speak_info, kwargs=dict(temperature_data=self.temperature_data,
+                spk_info = Process(target=speak_full_info, kwargs=dict(temperature_data=self.temperature_data,
+                                                                           pressure_data=self.pressure_data,
+                                                                           humidity_data=self.humidity_data), daemon=True)
+
+
+                spk_info.start()
+
+            elif speak_all_values:
+                speak_all_values = False
+
+                spk_all_info = Process(target=speak_info, kwargs=dict(temperature_data=self.temperature_data,
                                                                   temperature_statistics=self.temperature_statistics,
                                                                   pressure_data=self.pressure_data,
                                                                   pressure_statistics=self.pressure_statistics,
                                                                   humidity_data=self.humidity_data,
                                                                   humidity_statistics=self.humidity_statistics,
                                                                   data_polling=self.data_polling), daemon=True)
-                spk_info.start()
 
-            elif speak_all_values:
-                speak_all_values = False
 
-                spk_all_info = Process(target=speak_full_info, kwargs=dict(temperature_data=self.temperature_data,
-                                                                           pressure_data=self.pressure_data,
-                                                                           humidity_data=self.humidity_data), daemon=True)
                 spk_all_info.start()
 
             date_delta = datetime.now() - time_mark
