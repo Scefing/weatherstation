@@ -25,19 +25,22 @@ class WeatherReport():
 
         self.information["condition"] = None
 
-    def change_location(self, weather_base_var=None, city_var=None, location_var=None, city="Philadelphia"):
+
+    @staticmethod
+    def change_location(weather_base_var=None, city_var=None, location_var=None, city="Philadelphia"):
         city_var = city
 
         location_var = weather_base_var.lookup_by_location(city_var)
 
-    def show_weather_report(self, condition_var=None):
+
+    @staticmethod
+    def show_weather_report(condition_var=None):
 
         font = ImageFont.truetype("/usr/local/share/fonts/DejaVuSans.ttf", 14)
 
         inkyphat.text((110, 10), condition_var.text, inkyphat.BLACK, font)
 
         inkyphat.show()
-
 
     def run(self, condition_var=None, location_var=None):
         condition_var = location_var.condition
