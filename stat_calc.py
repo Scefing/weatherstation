@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import scipy.stats
+import numpy
+import warnings
 import math
 
 
@@ -61,7 +63,17 @@ def approx_delta(data, as_tts_string=False):
 
 
 def compute_least_squares(data):
-    slope, intercept, r_value, p_value, std_err = scipy.stats.linregress(data, range(0, len(data)))
+    """Compute the least squares linear regression for the data thus far. If there's only one data point, the r-value and
+    p-value are set to appropriate values of 0 and NaN (i.e. cannot be calculated).
+
+    :param data: input data
+    :return: r-value and p-value of data over time
+    """
+    if len(data) == 1:
+        r_value = 0
+        p_value = numpy.NaN
+    else:
+        slope, intercept, r_value, p_value, std_err = scipy.stats.linregress(data, range(0, len(data)))
 
     return r_value, p_value
 
