@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from gtts import gTTS
 import subprocess
 
@@ -41,3 +42,7 @@ def speak_info(temperature_data, pressure_data, humidity_data):
                                                                                                           humidity_data[-1])
     speak(cur_info, "cur_info")
 
+def speak_screen_change(cur_screen):
+    cur_screen_change = "Changed to screen {}.".format(cur_screen)
+
+    speak(cur_screen_change, "cur_screen_change")

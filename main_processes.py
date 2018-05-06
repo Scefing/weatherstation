@@ -8,9 +8,9 @@ import touchphat
 from pilconvert import palette_convert
 from tpf_60 import sensing
 from plot_graphs import plot_graph
-from inky_write import show_image
+from inky_write import show_tpf_image, show_weather_image
 from stat_calc import calc_statistics
-from speak_information import speak_info, speak_full_info
+from speak_information import speak_info, speak_full_info, speak_screen_change
 
 @touchphat.on_touch("A")
 def handle_a():
@@ -22,9 +22,15 @@ def handle_b():
     global speak_all_values
     speak_all_values = True
 
+@touchphat.on_touch("Enter")
+def handle_enter():
+    global screen_change_press
+    screen_change_press += 1
+
 class Weather:
 
-    def __init__(self, image_file=None, screen_polling_time=60, sleep_time=1, data_polling_time=1, data_limit=60, data_timeout=None):
+    def __init__(self, image_file=None, screen_polling_time=60, sleep_time=1, data_polling_time=1, data_limit=60,
+                 data_timeout=None):
 
         manager = Manager()
 
@@ -35,6 +41,8 @@ class Weather:
         self.temperature_statistics = manager.dict()
         self.pressure_statistics = manager.dict()
         self.humidity_statistics = manager.dict()
+        self.cur_screen = manager.list()
+        self.cur_screen.append(0)
 
         self.calculate_condition = manager.Condition()
 
@@ -58,9 +66,12 @@ class Weather:
         self.sleep_time = sleep_time
 
 
+
     def run(self):
         global speak_values
         global speak_all_values
+        global screen_change_press
+
         sensor = Process(target=sensing, args=(self.temperature_data, self.pressure_data, self.humidity_data, self.data_polling, self.data_limit, self.data_timeout, self.calculate_condition), daemon=True)
         sensor.start()
 
@@ -97,8 +108,17 @@ class Weather:
                                                                   humidity_statistics=self.humidity_statistics,
                                                                   data_polling=self.data_polling), daemon=True)
 
-
                 spk_all_info.start()
+
+            if screen_change_press >= 1:
+                screen_changes = screen_change_press
+                screen_change_press = 0
+
+                self.cur_screen.append((self.cur_screen[0] + screen_changes) % 4)
+                self.cur_screen.pop(0)
+
+                spk_changing_screen = Process(target=speak_screen_change, args=(self.cur_screen,), daemon=True)
+                spk_changing_screen.start()
 
             date_delta = datetime.now() - time_mark
             if date_delta.total_seconds() >= self.polling_time:
@@ -107,17 +127,22 @@ class Weather:
                 time_mark = datetime.now()
                 print(time_mark)
 
-                cur_info = "Latest: {0:.2f} F,{1:.2f} hPa,{2:.3f} %RH".format(self.temperature_data[-1],
-                                                                              self.pressure_data[-1],
-                                                                              self.humidity_data[-1])
-                print(cur_info)
+                if self.cur_screen[0] == 0:
 
-                plot_graph(self.temperature_data, self.pressure_data, self.humidity_data, self.image_file)
-                palette_convert(self.image_file)
+                    cur_info = "Latest: {0:.2f} F,{1:.2f} hPa,{2:.3f} %RH".format(self.temperature_data[-1],
+                                                                                  self.pressure_data[-1],
+                                                                                  self.humidity_data[-1])
+                    print(cur_info)
 
-                inky_show = Process(target=show_image, args=(self.image_file, self.temperature_data,
-                                                             self.pressure_data, self.humidity_data), daemon=True)
-                inky_show.start()
+                    plot_graph(self.temperature_data, self.pressure_data, self.humidity_data, self.image_file)
+                    palette_convert(self.image_file)
+
+                    inky_show = Process(target=show_tpf_image, args=(self.image_file, self.temperature_data,
+                                                                     self.pressure_data, self.humidity_data), daemon=True)
+                    inky_show.start()
+                else:
+                    inky_show = Process(target=show_weather_image, daemon=True)
+                    inky_show.start()
 
                 bar.start()
 
@@ -129,6 +154,7 @@ class Weather:
 if __name__ == "__main__":
     speak_values = False
     speak_all_values = False
+    screen_change_press = 0
 
     while True:
         try:
