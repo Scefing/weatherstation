@@ -28,6 +28,7 @@ def handle_enter():
     global screen_change_press
     screen_change_press += 1
 
+
 class EnvironmentReport:
 
     def __init__(self, image_file=None, screen_polling_time=60, sleep_time=1, data_polling_time=1, data_limit=60,
@@ -143,7 +144,8 @@ class EnvironmentReport:
                                                                      self.pressure_data, self.humidity_data), daemon=True)
                     inky_show.start()
                 else:
-                    weather_report = Process(target=self.weather_report.run)
+                    weather_report = Process(target=self.weather_report.run, kwargs=dict(condition_var=self.weather_report.information["condition"],
+                                                                                         location_var=self.weather_report.information["location"]),daemon=True)
                     weather_report.start()
 
                 bar.start()
