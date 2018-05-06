@@ -59,10 +59,3 @@ def show_tpf_image(infile, temp_data=None, pressure_data=None, humidity_data=Non
     inkyphat.text((110,70), "{0:.0f} %RH \n {1}".format(humidity_data[-1], humidity_info), inkyphat.BLACK, font)
 
     inkyphat.show()
-
-def show_weather_image():
-    font = ImageFont.truetype("/usr/local/share/fonts/DejaVuSans.ttf", 14)
-
-    inkyphat.text((110,10), "Hi", inkyphat.BLACK, font)
-
-    inkyphat.show()

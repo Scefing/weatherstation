@@ -8,9 +8,10 @@ import touchphat
 from pilconvert import palette_convert
 from tpf_60 import sensing
 from plot_graphs import plot_graph
-from inky_write import show_tpf_image, show_weather_image
+from inky_write import show_tpf_image
 from stat_calc import calc_statistics
 from speak_information import speak_info, speak_full_info, speak_screen_change
+from weather_report import WeatherReport
 
 @touchphat.on_touch("A")
 def handle_a():
@@ -27,7 +28,7 @@ def handle_enter():
     global screen_change_press
     screen_change_press += 1
 
-class Weather:
+class EnvironmentReport:
 
     def __init__(self, image_file=None, screen_polling_time=60, sleep_time=1, data_polling_time=1, data_limit=60,
                  data_timeout=None):
@@ -65,7 +66,7 @@ class Weather:
             UserWarning("Sleeping longer than 60s will mean that the screen updates less than once per minute.")
         self.sleep_time = sleep_time
 
-
+        self.weather_report = WeatherReport()
 
     def run(self):
         global speak_values
@@ -83,6 +84,7 @@ class Weather:
                                                                 humidity_statistics=self.humidity_statistics,
                                                                 condition_flag=self.calculate_condition), daemon=True)
         calc_stat.start()
+
 
         time_mark = datetime.now()
         bar = progressbar.ProgressBar(widgets=["Polling: ", progressbar.AnimatedMarker()], max_value=progressbar.UnknownLength)
@@ -141,8 +143,8 @@ class Weather:
                                                                      self.pressure_data, self.humidity_data), daemon=True)
                     inky_show.start()
                 else:
-                    inky_show = Process(target=show_weather_image, daemon=True)
-                    inky_show.start()
+                    weather_report = Process(target=self.weather_report.run)
+                    weather_report.start()
 
                 bar.start()
 
@@ -179,6 +181,6 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             pass
 
-    w = Weather(image_file="test.png", data_polling_time=dt_polling_time, screen_polling_time=scr_polling_time, sleep_time=1, data_limit=dt_limit)
+    w = EnvironmentReport(image_file="test.png", data_polling_time=dt_polling_time, screen_polling_time=scr_polling_time, sleep_time=1, data_limit=dt_limit)
     w.run()
 
