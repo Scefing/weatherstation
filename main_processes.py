@@ -168,6 +168,6 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             pass
 
-    w = MainProcess(image_file="test.png", envr_data_polling_time=dt_polling_time, screen_polling_time=scr_polling_time, sleep_time=1, envr_data_limit=dt_limit)
+    w = MainProcess(envr_image="test.png", envr_data_polling_time=dt_polling_time, screen_polling_time=scr_polling_time, sleep_time=1, envr_data_limit=dt_limit)
     w.run()
 
