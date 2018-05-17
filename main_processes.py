@@ -2,6 +2,7 @@
 from multiprocessing import Manager, Process
 from datetime import datetime
 import time
+import RPi.GPIO as GPIO
 import progressbar
 import touchphat
 
@@ -10,7 +11,7 @@ from environment_report import EnvironmentReport
 from pilconvert import palette_convert
 from plot_graphs import plot_graph
 from inky_write import show_tpf_image
-from speak_information import speak_info, speak_full_info, speak_screen_change
+from speak_information import speak_info, speak_full_info
 from weather_report import WeatherReport
 
 @touchphat.on_touch("A")
@@ -60,12 +61,37 @@ class MainProcess:
                                                data_limit=envr_data_limit, data_timeout=envr_data_timeout)
         self.weather_report = WeatherReport()
 
+    @staticmethod
+    def calculate_led(screen_value):
+
+        if screen_value == 0:
+            GPIO.output(23, GPIO.LOW)
+            GPIO.output(24, GPIO.LOW)
+        elif screen_value == 1:
+            GPIO.output(23, GPIO.HIGH)
+            GPIO.output(24, GPIO.LOW)
+        elif screen_value == 2:
+            GPIO.output(23, GPIO.LOW)
+            GPIO.output(24, GPIO.HIGH)
+        elif screen_value == 3:
+            GPIO.output(23, GPIO.HIGH)
+            GPIO.output(24, GPIO.HIGH)
+        else:
+            raise ValueError("Screen number out of range 0-3!")
+
     def run(self):
         global speak_values
         global speak_all_values
         global screen_change_press
 
         self.enviro_report.setup()
+
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+        GPIO.setup(23, GPIO.OUT)
+        GPIO.setup(24, GPIO.OUT)
+        GPIO.output(23, GPIO.LOW)
+        GPIO.output(24, GPIO.LOW)
 
         time_mark = datetime.now()
         bar = progressbar.ProgressBar(widgets=["Polling: ", progressbar.AnimatedMarker()], max_value=progressbar.UnknownLength)
@@ -78,8 +104,8 @@ class MainProcess:
                 self.cur_screen.append((self.cur_screen[0] + screen_changes) % 4)
                 self.cur_screen.pop(0)
 
-                spk_changing_screen = Process(target=speak_screen_change, args=(self.cur_screen,), daemon=True)
-                spk_changing_screen.start()
+                change_screen_leds = Process(target=self.calculate_led, args=(self.cur_screen[0],), daemon=True)
+                change_screen_leds.start()
 
             if self.cur_screen[0] == 0:
                 if speak_values:
